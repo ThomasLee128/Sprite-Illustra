@@ -1,0 +1,22 @@
+# 智灵智能插图 - Python 后端依赖
+
+# Web 框架
+fastapi==0.115.*
+uvicorn[standard]==0.34.*
+pydantic-settings==2.7.*
+
+# HTTP 客户端（调用 AI API）
+httpx==0.28.*
+
+# 文档解析
+python-docx==1.1.*
+PyMuPDF==1.25.*
+
+# 文档导出
+weasyprint==63.*
+
+# CORS 中间件（FastAPI 内置，无需额外安装）
+
+# 工具
+python-multipart==0.0.*
+python-dotenv==1.1.*

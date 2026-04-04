@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+venv/
+.venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 运行时数据
+backend/data/uploads/*
+backend/data/images/*
+backend/data/exports/*
+!backend/data/uploads/.gitkeep
+!backend/data/images/.gitkeep
+!backend/data/exports/.gitkeep
+
+# 配置文件（含敏感信息）
+.env
+backend/settings.json
+
+# Node
+node_modules/
+frontend/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
