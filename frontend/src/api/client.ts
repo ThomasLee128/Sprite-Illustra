@@ -19,4 +19,16 @@ const client = axios.create({
   },
 })
 
+// 添加响应拦截器，处理错误响应
+client.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // 如果后端返回了错误信息，提取并抛出
+    if (error.response && error.response.data && error.response.data.error) {
+      throw new Error(error.response.data.error)
+    }
+    throw error
+  }
+)
+
 export default client

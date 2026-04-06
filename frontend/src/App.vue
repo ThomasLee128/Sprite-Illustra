@@ -21,7 +21,7 @@ import { RouterLink, RouterView } from 'vue-router'
         <div class="flex justify-between h-16 items-center">
           <!-- Logo -->
           <div class="flex items-center space-x-2">
-            <span class="text-xl font-bold text-indigo-600">智灵智能插图</span>
+            <span class="text-xl font-bold text-indigo-600">智灵智能插图</span><span class="text-sm text-gray-500 ml-2">Sprite Illustra</span>
           </div>
 
           <!-- 导航链接 -->

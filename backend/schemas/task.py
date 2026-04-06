@@ -18,6 +18,7 @@ class TaskPhase(str, Enum):
     UPLOADED = "uploaded"       # 已上传，等待开始
     PARSING = "parsing"        # 文档解析中
     ANALYZING = "analyzing"    # AI 内容分析中
+    PREVIEW = "preview"        # 预览阶段，等待用户确认
     GENERATING = "generating"  # AI 图片生成中
     COMPLETE = "complete"      # 处理完成
     FAILED = "failed"          # 处理失败
@@ -52,3 +53,4 @@ class TaskStartRequest(BaseModel):
     text_model: str = Field(description="用于文案理解的文本模型 ID")
     image_model: str = Field(description="用于生成插图的图片模型 ID")
     style: str = Field(default="flat", description="插图风格")
+    is_ppt_mode: bool = Field(default=False, description="是否为PPT模式")

@@ -6,26 +6,24 @@
 创建时间：2026-04-04
 后续开发：Trea
 TODO：
-- [ ] TODO-1: 实现 parse(self, file_path: str) -> Document
-      - 使用 PyMuPDF 打开文件: doc = fitz.open(file_path)
-      - 逐页提取文本块: page.get_text("blocks")
-        * 每个 block 返回 (x0, y0, x1, y1, text, block_no, block_type)
-        * block_type == 0 为文本块，跳过图片块（type==1）
-      - 文本块处理：
-        * 根据字体大小或文本长度启发式判断标题（较短且独占一块 -> HEADING）
-        * 合并同页相邻的文本块为段落（当 y 坐标间距较小时）
-        * 其他块 -> PARAGRAPH
-      - 为每个 section 生成 UUID，设置递增的 position
-      - metadata.title = 第一个 HEADING 或第一页前几行文本
-      - 返回 Document
-      - 注意: PDF 结构复杂，优先保证文本完整提取，结构识别可以偏保守
-      - 异常处理: 加密PDF/损坏文件 -> raise DocumentParseError
+- [x] TODO-1: 实现 parse(self, file_path: str) -> Document
+
 依赖：PyMuPDF (import fitz), schemas.document, core.exceptions, uuid
 """
 
+import uuid
+from pathlib import Path
+
+try:
+    import fitz
+    HAS_PDF = True
+except ImportError:
+    HAS_PDF = False
+
 from parsers.base import BaseParser
 from parsers import register_parser
-from schemas.document import Document
+from schemas.document import Document, DocumentSection, DocumentMetadata, SectionType
+from core.exceptions import DocumentParseError
 
 
 @register_parser
@@ -36,5 +34,97 @@ class PdfParser(BaseParser):
 
     async def parse(self, file_path: str) -> Document:
         """解析 .pdf 文件"""
-        # TODO-1
-        raise NotImplementedError("待 Trea 实现")
+        if not HAS_PDF:
+            raise DocumentParseError("需要安装 PyMuPDF (fitz) 库才能解析 PDF 文档")
+        
+        try:
+            doc = fitz.open(file_path)
+            sections: list[DocumentSection] = []
+            position = 0
+            first_heading = ""
+            total_words = 0
+            
+            for page_num, page in enumerate(doc):
+                # 获取文本块
+                blocks = page.get_text("blocks")
+                
+                # 处理文本块
+                text_blocks = []
+                for block in blocks:
+                    # block 格式: (x0, y0, x1, y1, text, block_no, block_type)
+                    if block[6] == 0:  # 文本块
+                        text = block[4].strip()
+                        if text:
+                            text_blocks.append((block[1], text))  # (y坐标, 文本)
+                
+                # 按 y 坐标排序（从上到下）
+                text_blocks.sort(key=lambda x: x[0])
+                
+                # 合并相邻文本块为段落
+                current_paragraph = []
+                last_y = None
+                
+                for y, text in text_blocks:
+                    # 判断是否为新段落（y 坐标变化较大）
+                    if last_y is not None and (y - last_y) > 20:
+                        if current_paragraph:
+                            para_text = " ".join(current_paragraph).strip()
+                            if para_text:
+                                total_words += len(para_text)
+                                section = self._create_section(para_text, position, sections)
+                                sections.append(section)
+                                if not first_heading and section.type == SectionType.HEADING:
+                                    first_heading = section.content
+                                position += 1
+                            current_paragraph = []
+                    
+                    current_paragraph.append(text)
+                    last_y = y
+                
+                # 处理最后一个段落
+                if current_paragraph:
+                    para_text = " ".join(current_paragraph).strip()
+                    if para_text:
+                        total_words += len(para_text)
+                        section = self._create_section(para_text, position, sections)
+                        sections.append(section)
+                        if not first_heading and section.type == SectionType.HEADING:
+                            first_heading = section.content
+                        position += 1
+            
+            # 构建元数据
+            filename = Path(file_path).name
+            metadata = DocumentMetadata(
+                title=first_heading or filename,
+                author="",
+                word_count=total_words,
+            )
+            
+            return Document(
+                filename=filename,
+                source_format="pdf",
+                sections=sections,
+                metadata=metadata,
+            )
+            
+        except Exception as e:
+            raise DocumentParseError(f"解析 PDF 文档失败: {str(e)}")
+
+    def _create_section(self, text: str, position: int, existing_sections: list) -> DocumentSection:
+        """创建文档段落"""
+        section_type = SectionType.PARAGRAPH
+        level = 0
+        
+        # 启发式判断标题（PDF中较短的、独占一行的文本可能是标题
+        if len(text) < 50 and "\n" not in text:
+            section_type = SectionType.HEADING
+            has_heading = any(s.type == SectionType.HEADING for s in existing_sections)
+            level = 1 if not has_heading else 2
+        
+        return DocumentSection(
+            id=str(uuid.uuid4()),
+            type=section_type,
+            level=level,
+            content=text,
+            position=position,
+        )

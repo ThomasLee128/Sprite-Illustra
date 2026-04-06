@@ -52,6 +52,11 @@ def get_supported_formats() -> list[str]:
 
 # --- 导入所有导出器以触发注册 ---
 from exporters.word_exporter import WordExporter    # noqa: E402, F401
-from exporters.pdf_exporter import PdfExporter      # noqa: E402, F401
 from exporters.md_exporter import MdExporter        # noqa: E402, F401
 from exporters.html_exporter import HtmlExporter    # noqa: E402, F401
+
+# PDF 导出器 - 已启用
+try:
+    from exporters.pdf_exporter import PdfExporter  # noqa: E402, F401
+except Exception as e:
+    print(f"警告：PDF 导出器加载失败: {e}，将不支持 PDF 导出")

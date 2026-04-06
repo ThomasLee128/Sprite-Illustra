@@ -11,6 +11,7 @@ TODO：
 - [ ] 根据实际部署需求调整 CORS 配置
 """
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -21,6 +22,13 @@ from fastapi.staticfiles import StaticFiles
 from config import settings, DATA_DIR
 from core.exceptions import AppException
 from api.router import api_router
+
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -74,5 +82,5 @@ if __name__ == "__main__":
         "main:app",
         host=settings.host,
         port=settings.port,
-        reload=settings.debug,
+        reload=False,  # 关闭 reload 模式，避免频繁重启
     )
